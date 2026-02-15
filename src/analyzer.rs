@@ -215,33 +215,35 @@ impl PdfAnalyzer {
         }
 
         // --- Source 2: page FileAttachment annotations ---
-        for page_dict in self.document.get_pages().values() {
-            if let Ok(annots_val) = page_dict.get(b"Annots") {
-                // Annots may be an inline array or a reference to one
-                let annots_array = if let Ok(id) = annots_val.as_reference() {
-                    self.document
-                        .get_object(id)
-                        .ok()
-                        .and_then(|o| o.as_array().ok().cloned())
-                } else {
-                    annots_val.as_array().ok().cloned()
-                };
+        let pages = self.document.get_pages();
+        for page_id in pages.values() {
+            if let Ok(page_obj) = self.document.get_object(*page_id) {
+                if let Ok(page_dict) = page_obj.as_dict() {
+                    if let Ok(annots_val) = page_dict.get(b"Annots") {
+                        // Annots may be an inline array or a reference to one
+                        let annots_array = if let Ok(id) = annots_val.as_reference() {
+                            self.document
+                                .get_object(id)
+                                .ok()
+                                .and_then(|o| o.as_array().ok().cloned())
+                        } else {
+                            annots_val.as_array().ok().cloned()
+                        };
 
-                if let Some(arr) = annots_array {
-                    for item in &arr {
-                        if let Ok(annot_id) = item.as_reference() {
-                            if let Ok(annot_obj) = self.document.get_object(annot_id) {
-                                if let Ok(dict) = annot_obj.as_dict() {
-                                    if dict
-                                        .get(b"Subtype")
-                                        .and_then(|v| v.as_name_str())
-                                        .map(|n| n == "FileAttachment")
-                                        .unwrap_or(false)
-                                    {
-                                        if let Ok(fs_val) = dict.get(b"FS") {
-                                            if let Ok(fs_id) = fs_val.as_reference() {
-                                                let name = Self::annotation_name(dict);
-                                                specs.push((name, fs_id));
+                        if let Some(arr) = annots_array {
+                            for item in &arr {
+                                if let Ok(annot_id) = item.as_reference() {
+                                    if let Ok(annot_obj) = self.document.get_object(annot_id) {
+                                        if let Ok(dict) = annot_obj.as_dict() {
+                                            if let Ok(subtype_name) = dict.get(b"Subtype").and_then(|v| v.as_name()) {
+                                                if subtype_name == b"FileAttachment" {
+                                                    if let Ok(fs_val) = dict.get(b"FS") {
+                                                        if let Ok(fs_id) = fs_val.as_reference() {
+                                                            let name = Self::annotation_name(dict);
+                                                            specs.push((name, fs_id));
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
                                     }
@@ -424,7 +426,8 @@ impl PdfAnalyzer {
         // /Subtype — MIME type stored as a PDF name (e.g. /application#2Fxml)
         // lopdf decodes percent-encoded names automatically.
         if let Ok(v) = spec_dict.get(b"Subtype") {
-            if let Ok(s) = v.as_name_str() {
+            if let Ok(name_bytes) = v.as_name() {
+                let s = String::from_utf8_lossy(name_bytes);
                 // PDF names use '#2F' for '/' — lopdf gives us the raw string;
                 // normalise the separator.
                 m.mime_type = Some(s.replace('#', "").to_ascii_lowercase());
