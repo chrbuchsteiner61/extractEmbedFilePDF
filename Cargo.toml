@@ -1,6 +1,25 @@
 [package]
 name = "extractembedfilepdf"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
+authors = ["Christian Buchsteiner <chrbuchsteiner61@github.com>"]
+description = "A library for validating PDF/A-3 documents and extracting their embedded files"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/chrbuchsteiner61/extractEmbedFilePDF"
+keywords = ["pdf", "pdf-a-3", "embedded-files", "extraction", "invoice"]
+categories = ["parsing", "filesystem"]
 
 [dependencies]
+lopdf = "0.38.0"
+thiserror = "2.0"
+
+[dev-dependencies]
+tempfile = "3.14"
+
+[[example]]
+name = "extract_files"
+path = "examples/extract_files.rs"
+
+[[example]]
+name = "filter_files"
+path = "examples/filter_files.rs"
