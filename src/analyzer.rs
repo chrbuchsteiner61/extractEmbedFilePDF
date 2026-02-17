@@ -108,11 +108,10 @@ impl PdfAnalyzer {
 
     /// Extract every embedded file from the document.
     ///
-    /// Files are identified via their specifications but stream content is not read
-    /// for PDF/A-3 documents as it is not useful for embedded file extraction.
-    /// If [`ExtractorConfig::extract_to_disk`] is `true` and
-    /// [`ExtractorConfig::output_directory`] is set, file specifications are processed
-    /// but no actual file content will be written.
+    /// Files are decoded (decompressed) before being returned. If
+    /// [`ExtractorConfig::extract_to_disk`] is `true` and
+    /// [`ExtractorConfig::output_directory`] is set, each file is also written
+    /// to that directory immediately.
     ///
     /// Returns [`ExtractError::NoEmbeddedFiles`] when no file specifications
     /// are found, or when every specification fails to decode.
@@ -124,13 +123,13 @@ impl PdfAnalyzer {
     ///
     /// let analyzer = PdfAnalyzer::from_path("invoice.pdf").unwrap();
     /// for file in analyzer.extract_embedded_files().unwrap() {
-    ///     println!("{} — file specification found", file.filename);
-    ///     file.save_to_disk("./out").unwrap(); // Will create empty files
+    ///     println!("{} — {} bytes", file.filename, file.data.len());
+    ///     file.save_to_disk("./out").unwrap();
     /// }
     /// ```
     pub fn extract_embedded_files(&self) -> Result<Vec<EmbeddedFile>> {
         let specs = self.collect_file_specs()?;
-
+        
         if specs.is_empty() {
             return Err(ExtractError::NoEmbeddedFiles);
         }
@@ -145,13 +144,11 @@ impl PdfAnalyzer {
                     eprintln!("extractEmbedFilePDF: warning: skipping '{name}': {e}");
                 }
                 Ok(file) => {
-                    // Note: File size checking is disabled since we no longer read stream content
-                    // for PDF/A-3 embedded file extraction
-                    // if let Some(max) = self.config.max_embedded_file_size {
-                    //     if file.data.len() > max {
-                    //         return Err(ExtractError::FileSizeExceeded);
-                    //     }
-                    // }
+                    if let Some(max) = self.config.max_embedded_file_size {
+                        if file.data.len() > max {
+                            return Err(ExtractError::FileSizeExceeded);
+                        }
+                    }
 
                     if self.config.extract_to_disk {
                         if let Some(ref dir) = self.config.output_directory {
@@ -211,10 +208,37 @@ impl PdfAnalyzer {
                     if let Ok(ef_val) = names_dict.get(b"EmbeddedFiles") {
                         if let Ok(ef_id) = ef_val.as_reference() {
                             specs.extend(self.walk_name_tree(ef_id));
+                        } else {
+                            // Handle inline /EmbeddedFiles dictionary
+                            if let Ok(ef_dict) = ef_val.as_dict() {
+                                // For inline dictionaries, we need to check for /Names array directly
+                                if let Ok(names_val) = ef_dict.get(b"Names") {
+                                    if let Ok(names_array) = names_val.as_array() {
+                                        let mut i = 0;
+                                        while i + 1 < names_array.len() {
+                                            if let Ok(name_bytes) = names_array[i].as_str() {
+                                                let name = String::from_utf8_lossy(name_bytes).into_owned();
+                                                if let Ok(spec_id) = names_array[i + 1].as_reference() {
+                                                    specs.push((name, spec_id));
+                                                }
+                                            }
+                                            i += 2;
+                                        }
+                                    }
+                                }
+                            }
                         }
+                    } else {
+                        // No /EmbeddedFiles in names dictionary
                     }
+                } else {
+                    // Could not get names dictionary
                 }
+            } else {
+                // No /Names in catalog
             }
+        } else {
+            // Could not get catalog
         }
 
         // --- Source 2: page FileAttachment annotations ---
@@ -321,9 +345,9 @@ impl PdfAnalyzer {
         "attachment".into()
     }
 
-    // ── Private: file specification parsing ───────────────────────────────────
+    // ── Private: file specification parsing and stream decoding ─────────────────
 
-    /// Parse a file-specification object and return an [`EmbeddedFile`] with metadata.
+    /// Parse a file-specification object and return an [`EmbeddedFile`] with content and metadata.
     ///
     /// Layout of a file specification (PDF spec §7.11.3):
     ///
@@ -342,7 +366,7 @@ impl PdfAnalyzer {
     ///
     /// The `/EF` entry is an **inline dictionary** (not a reference), but each
     /// of its values (`/F`, `/UF`) **is** an indirect reference to the stream
-    /// object. For PDF/A-3, we only parse the specification without reading stream content.
+    /// object. The stream content is read and returned in the result.
     fn parse_file_spec(&self, name: &str, spec_id: ObjectId) -> Result<EmbeddedFile> {
         let spec_obj = self.document.get_object(spec_id)?;
         let spec_dict = spec_obj.as_dict().map_err(|_| {
@@ -386,9 +410,9 @@ impl PdfAnalyzer {
             ExtractError::ExtractionError(name.into(), "embedded stream object is not a stream".into())
         })?;
 
-        // For PDF/A-3, we don't read the stream content directly
-        // as it's a container format where embedded files are accessible via file specifications
-        let data = Vec::new(); // Empty data since stream reading is not useful for embedded file extraction
+        // Read and decompress the stream content
+        let data = stream.decompressed_content()
+            .unwrap_or_else(|_| stream.content.clone());
 
         let filename = Self::best_filename(spec_dict, name);
         let metadata = Self::read_metadata(spec_dict, &stream.dict);

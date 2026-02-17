@@ -90,9 +90,13 @@ impl<'a> PdfValidator<'a> {
             ExtractError::NotPdfA3("/Metadata object is not a stream".into())
         })?;
 
-        let bytes = stream.decompressed_content().map_err(|e| {
-            ExtractError::NotPdfA3(format!("cannot decompress /Metadata stream: {e}"))
-        })?;
+        let bytes = match stream.decompressed_content() {
+            Ok(content) => content,
+            Err(_) => {
+                // Fallback to raw content if decompression fails
+                stream.content.clone()
+            }
+        };
 
         Ok(String::from_utf8_lossy(&bytes).into_owned())
     }
