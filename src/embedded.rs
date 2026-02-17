@@ -11,7 +11,8 @@ pub struct EmbeddedFile {
     /// (Unicode name preferred over ASCII name when both are present).
     pub filename: String,
 
-    /// The raw, decompressed file content.
+    /// The raw file content. For PDF/A-3 documents, this will be empty
+    /// as stream reading is not used for embedded file extraction.
     pub data: Vec<u8>,
 
     /// Optional metadata read from the PDF file specification and stream

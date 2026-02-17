@@ -9,8 +9,9 @@
 //!    declares PDF/A-3 conformance (part 3, level A, B, or U).
 //! 3. **Detect embedded files** — walks the PDF name tree and page annotations to find
 //!    every embedded-file specification.
-//! 4. **Extract embedded files** — decompresses each embedded stream and returns the
-//!    raw bytes together with filename and metadata.
+//! 4. **Extract embedded files** — identifies each embedded file specification and extracts
+//!    metadata. For PDF/A-3 documents, stream content is not read as it's not useful for
+//!    embedded file extraction.
 //!
 //! ## Quick example
 //!
@@ -25,7 +26,7 @@
 //!
 //! if analyzer.has_embedded_files()? {
 //!     for file in analyzer.extract_embedded_files()? {
-//!         println!("  {} — {} bytes", file.filename, file.data.len());
+//!         println!("  {} — file specification found", file.filename);
 //!     }
 //! }
 //! # Ok(())
