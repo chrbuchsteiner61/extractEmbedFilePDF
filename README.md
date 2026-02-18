@@ -149,19 +149,8 @@ cargo run --example filter_files -- invoice.pdf --ext pdf
 # Extract by MIME type
 cargo run --example filter_files -- invoice.pdf --mime application/xml
 ```
-
----
-
-## Relation to extractXMLeRechnung
-
-`extractEmbedFilePDF` is the reusable library extracted from the
-[extractXMLeRechnung](https://github.com/chrbuchsteiner61/extractXMLeRechnung)
-application.  Where that application targets e-invoice XML specifically,
-this crate is general-purpose: it extracts **any** file type embedded in
-**any** PDF/A-3 document.
-
 ---
 
 ## License
 
-Licensed under either of [MIT](LICENSE-MIT) or [Apache 2.0](LICENSE-APACHE) at your option.
+Licensed under [MIT](LICENSE-MIT).
