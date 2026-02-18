@@ -43,7 +43,9 @@ fn main() {
     // 2. Is it PDF/A-3?
     match analyzer.is_pdfa3() {
         Ok(true) => {
-            let level = analyzer.conformance_level().unwrap_or_else(|| "PDF/A-3".into());
+            let level = analyzer
+                .conformance_level()
+                .unwrap_or_else(|| "PDF/A-3".into());
             println!("✓ {level}");
         }
         Ok(false) => println!("⚠ Not PDF/A-3 (proceeding anyway)"),

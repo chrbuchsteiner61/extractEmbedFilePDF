@@ -46,7 +46,7 @@ pub use embedded::{EmbeddedFile, EmbeddedFileMetadata};
 // ── Configuration ────────────────────────────────────────────────────────────
 
 /// Runtime configuration for [`PdfAnalyzer`].
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct ExtractorConfig {
     /// When `true`, [`PdfAnalyzer::is_pdfa3`] returns `Err` instead of `Ok(false)`
     /// if the document does not declare PDF/A-3 conformance.
@@ -64,17 +64,6 @@ pub struct ExtractorConfig {
 
     /// Directory used when `extract_to_disk` is `true`.
     pub output_directory: Option<String>,
-}
-
-impl Default for ExtractorConfig {
-    fn default() -> Self {
-        Self {
-            strict_pdfa3_validation: false,
-            max_embedded_file_size: None,
-            extract_to_disk: false,
-            output_directory: None,
-        }
-    }
 }
 
 // ── Error type ───────────────────────────────────────────────────────────────

@@ -72,8 +72,10 @@ fn save_to_disk_creates_file() {
 
 #[test]
 fn metadata_is_xml_true_for_xml_mime() {
-    let mut m = EmbeddedFileMetadata::default();
-    m.mime_type = Some("application/xml".into());
+    let m = EmbeddedFileMetadata {
+        mime_type: Some("application/xml".into()),
+        ..Default::default()
+    };
     assert!(m.is_xml());
 }
 
@@ -84,8 +86,10 @@ fn metadata_is_xml_false_without_mime() {
 
 #[test]
 fn metadata_has_mime_type_case_insensitive() {
-    let mut m = EmbeddedFileMetadata::default();
-    m.mime_type = Some("Application/XML".into());
+    let m = EmbeddedFileMetadata {
+        mime_type: Some("Application/XML".into()),
+        ..Default::default()
+    };
     assert!(m.has_mime_type("application/xml"));
 }
 

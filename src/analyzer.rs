@@ -1,5 +1,5 @@
-use crate::{EmbeddedFile, EmbeddedFileMetadata, ExtractError, ExtractorConfig, Result};
 use crate::validator::PdfValidator;
+use crate::{EmbeddedFile, EmbeddedFileMetadata, ExtractError, ExtractorConfig, Result};
 use lopdf::{Document, ObjectId};
 use std::path::Path;
 
@@ -129,7 +129,7 @@ impl PdfAnalyzer {
     /// ```
     pub fn extract_embedded_files(&self) -> Result<Vec<EmbeddedFile>> {
         let specs = self.collect_file_specs()?;
-        
+
         if specs.is_empty() {
             return Err(ExtractError::NoEmbeddedFiles);
         }
@@ -199,7 +199,10 @@ impl PdfAnalyzer {
             if let Ok(names_val) = catalog.get(b"Names") {
                 // /Names may be an inline dict or an indirect reference
                 let names_dict = if let Ok(id) = names_val.as_reference() {
-                    self.document.get_object(id).ok().and_then(|o| o.as_dict().ok().cloned())
+                    self.document
+                        .get_object(id)
+                        .ok()
+                        .and_then(|o| o.as_dict().ok().cloned())
                 } else {
                     names_val.as_dict().ok().cloned()
                 };
@@ -217,8 +220,11 @@ impl PdfAnalyzer {
                                         let mut i = 0;
                                         while i + 1 < names_array.len() {
                                             if let Ok(name_bytes) = names_array[i].as_str() {
-                                                let name = String::from_utf8_lossy(name_bytes).into_owned();
-                                                if let Ok(spec_id) = names_array[i + 1].as_reference() {
+                                                let name = String::from_utf8_lossy(name_bytes)
+                                                    .into_owned();
+                                                if let Ok(spec_id) =
+                                                    names_array[i + 1].as_reference()
+                                                {
                                                     specs.push((name, spec_id));
                                                 }
                                             }
@@ -262,7 +268,9 @@ impl PdfAnalyzer {
                                 if let Ok(annot_id) = item.as_reference() {
                                     if let Ok(annot_obj) = self.document.get_object(annot_id) {
                                         if let Ok(dict) = annot_obj.as_dict() {
-                                            if let Ok(subtype_name) = dict.get(b"Subtype").and_then(|v| v.as_name()) {
+                                            if let Ok(subtype_name) =
+                                                dict.get(b"Subtype").and_then(|v| v.as_name())
+                                            {
                                                 if subtype_name == b"FileAttachment" {
                                                     if let Ok(fs_val) = dict.get(b"FS") {
                                                         if let Ok(fs_id) = fs_val.as_reference() {
@@ -374,9 +382,9 @@ impl PdfAnalyzer {
         })?;
 
         // Resolve /EF — it is an inline dictionary, NOT an object reference.
-        let ef_val = spec_dict.get(b"EF").map_err(|_| {
-            ExtractError::ExtractionError(name.into(), "missing /EF entry".into())
-        })?;
+        let ef_val = spec_dict
+            .get(b"EF")
+            .map_err(|_| ExtractError::ExtractionError(name.into(), "missing /EF entry".into()))?;
 
         let ef_dict = if let Ok(ef_id) = ef_val.as_reference() {
             // Some producers incorrectly store /EF as a reference — handle both.
@@ -388,9 +396,12 @@ impl PdfAnalyzer {
                 })?
                 .clone()
         } else {
-            ef_val.as_dict().map_err(|_| {
-                ExtractError::ExtractionError(name.into(), "/EF is not a dictionary".into())
-            })?.clone()
+            ef_val
+                .as_dict()
+                .map_err(|_| {
+                    ExtractError::ExtractionError(name.into(), "/EF is not a dictionary".into())
+                })?
+                .clone()
         };
 
         // /UF preferred over /F (unicode vs. ASCII path)
@@ -407,17 +418,25 @@ impl PdfAnalyzer {
 
         let stream_obj = self.document.get_object(stream_id)?;
         let stream = stream_obj.as_stream().map_err(|_| {
-            ExtractError::ExtractionError(name.into(), "embedded stream object is not a stream".into())
+            ExtractError::ExtractionError(
+                name.into(),
+                "embedded stream object is not a stream".into(),
+            )
         })?;
 
         // Read and decompress the stream content
-        let data = stream.decompressed_content()
+        let data = stream
+            .decompressed_content()
             .unwrap_or_else(|_| stream.content.clone());
 
         let filename = Self::best_filename(spec_dict, name);
         let metadata = Self::read_metadata(spec_dict, &stream.dict);
 
-        Ok(EmbeddedFile { filename, data, metadata })
+        Ok(EmbeddedFile {
+            filename,
+            data,
+            metadata,
+        })
     }
 
     /// Return the best available filename: Unicode (/UF) > ASCII (/F) > fallback.

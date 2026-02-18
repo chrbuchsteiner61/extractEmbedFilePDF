@@ -32,7 +32,9 @@ impl<'a> PdfValidator<'a> {
 
         // Trailer must not be empty
         if self.document.trailer.is_empty() {
-            return Err(ExtractError::InvalidPdf("missing trailer dictionary".into()));
+            return Err(ExtractError::InvalidPdf(
+                "missing trailer dictionary".into(),
+            ));
         }
 
         Ok(true)
@@ -70,25 +72,27 @@ impl<'a> PdfValidator<'a> {
 
     /// Walk catalog → /Metadata → stream → decompressed bytes → UTF-8 string.
     fn read_xmp_metadata(&self) -> Result<String> {
-        let catalog = self.document.catalog().map_err(|e| {
-            ExtractError::NotPdfA3(format!("cannot read catalog: {e}"))
-        })?;
+        let catalog = self
+            .document
+            .catalog()
+            .map_err(|e| ExtractError::NotPdfA3(format!("cannot read catalog: {e}")))?;
 
-        let meta_obj = catalog.get(b"Metadata").map_err(|_| {
-            ExtractError::NotPdfA3("catalog has no /Metadata entry".into())
-        })?;
+        let meta_obj = catalog
+            .get(b"Metadata")
+            .map_err(|_| ExtractError::NotPdfA3("catalog has no /Metadata entry".into()))?;
 
         let meta_id = meta_obj.as_reference().map_err(|_| {
             ExtractError::NotPdfA3("/Metadata entry is not an indirect reference".into())
         })?;
 
-        let meta_object = self.document.get_object(meta_id).map_err(|e| {
-            ExtractError::NotPdfA3(format!("cannot resolve /Metadata object: {e}"))
-        })?;
+        let meta_object = self
+            .document
+            .get_object(meta_id)
+            .map_err(|e| ExtractError::NotPdfA3(format!("cannot resolve /Metadata object: {e}")))?;
 
-        let stream = meta_object.as_stream().map_err(|_| {
-            ExtractError::NotPdfA3("/Metadata object is not a stream".into())
-        })?;
+        let stream = meta_object
+            .as_stream()
+            .map_err(|_| ExtractError::NotPdfA3("/Metadata object is not a stream".into()))?;
 
         let bytes = match stream.decompressed_content() {
             Ok(content) => content,
@@ -108,8 +112,8 @@ impl<'a> PdfValidator<'a> {
     /// - attribute syntax  : `pdfaid:part="3"`
     /// - element syntax    : `<pdfaid:part>3</pdfaid:part>`
     fn xmp_declares_pdfa3(xmp: &str) -> bool {
-        let has_part3 = xmp.contains(r#"pdfaid:part="3""#)
-            || xmp.contains("<pdfaid:part>3</pdfaid:part>");
+        let has_part3 =
+            xmp.contains(r#"pdfaid:part="3""#) || xmp.contains("<pdfaid:part>3</pdfaid:part>");
 
         if !has_part3 {
             return false;
@@ -134,12 +138,10 @@ impl<'a> PdfValidator<'a> {
             || xmp.contains("<pdfaid:part>3</pdfaid:part>")
         {
             "3"
-        } else if xmp.contains(r#"pdfaid:part="2""#)
-            || xmp.contains("<pdfaid:part>2</pdfaid:part>")
+        } else if xmp.contains(r#"pdfaid:part="2""#) || xmp.contains("<pdfaid:part>2</pdfaid:part>")
         {
             "2"
-        } else if xmp.contains(r#"pdfaid:part="1""#)
-            || xmp.contains("<pdfaid:part>1</pdfaid:part>")
+        } else if xmp.contains(r#"pdfaid:part="1""#) || xmp.contains("<pdfaid:part>1</pdfaid:part>")
         {
             "1"
         } else {
