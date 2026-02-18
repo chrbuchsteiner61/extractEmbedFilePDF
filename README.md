@@ -149,6 +149,7 @@ cargo run --example filter_files -- invoice.pdf --ext pdf
 # Extract by MIME type
 cargo run --example filter_files -- invoice.pdf --mime application/xml
 ```
+
 ---
 
 ## License
