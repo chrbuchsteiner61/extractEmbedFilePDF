@@ -1,65 +1,34 @@
 # extractembedfilepdf
 
-A Rust library for validating PDF/A-3 documents and extracting embedded files with support for various file formats including XML invoices
+## extractEmbedFilePDF
 
-## Installation
+A Rust library for validating PDF/A-3 documents and extracting their embedded files.
 
-Add this to your `Cargo.toml`:
+### What this crate does
 
-```toml
-[dependencies]
-extractembedfilepdf = "0.2.0"
-```
+1. **Validate PDF** — checks that the bytes form a structurally valid PDF document.
+2. **Validate PDF/A-3** — reads the XMP metadata stream and confirms the document
+   declares PDF/A-3 conformance (part 3, level A, B, or U).
+3. **Detect embedded files** — walks the PDF name tree and page annotations to find
+   every embedded-file specification.
+4. **Extract embedded files** — reads each embedded stream and returns the
+   raw bytes together with filename and metadata.
 
-## Usage
+### Quick example
 
 ```rust
-use extractembedfilepdf::{PdfAnalyzer, ValidationConfig};
+use extractembedfilepdf::{PdfAnalyzer, ExtractorConfig};
 
-// Create a PDF analyzer with default configuration
-let mut analyzer = PdfAnalyzer::new();
+let analyzer = PdfAnalyzer::from_path("invoice.pdf")?;
 
-// Or use a custom configuration
-let config = ValidationConfig::default();
-let mut analyzer = PdfAnalyzer::with_config(config);
+println!("Valid PDF : {}", analyzer.is_pdf()?);
+println!("PDF/A-3   : {}", analyzer.is_pdfa3()?);
 
-// Extract embedded files from a PDF
-let pdf_bytes = std::fs::read("document.pdf")?;
-let embedded_files = analyzer.extract_embedded_files(&pdf_bytes)?;
-
-// Process extracted files
-for file in embedded_files {
-    println!("Found file: {}", file.name);
-    
-    // Save file to disk
-    file.save_to_disk(&file.name)?;
-    
-    // Check file extension
-    if let Some(ext) = file.extension() {
-        println!("Extension: {}", ext);
+if analyzer.has_embedded_files()? {
+    for file in analyzer.extract_embedded_files()? {
+        println!("  {} — {} bytes", file.filename, file.data.len());
     }
 }
 ```
 
-## Features
-
-- Extract embedded files from PDF/A-3 documents
-- Validate PDF structure and compliance
-- Support for various file formats including XML invoices
-- Type-safe error handling with custom error types
-- Configurable validation rules
-
-## Examples
-
-Check the [examples](examples/) directory for complete usage examples:
-
-- `extract_files.rs` - Basic file extraction
-- `filter_files.rs` - Filtering files by type/extension
-
-## License
-
-This project is licensed under the MIT license.
-
-## Repository
-
-[https://github.com/chrbuchsteiner61/extractEmbedFilePDF](https://github.com/chrbuchsteiner61/extractEmbedFilePDF)
+License: MIT
