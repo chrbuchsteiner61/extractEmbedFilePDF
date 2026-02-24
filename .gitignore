@@ -3,6 +3,9 @@
 **/*.rs.bk
 *.pdb
 
+# Always include src folder
+!src/
+
 # Cargo
 Cargo.lock
 .cargo/
@@ -76,4 +79,5 @@ target/criterion/
 .local/
 factur-x.xml
 examples/Beispiel_Rechnung.pdf
-examples/Test-Mail.pdf
+/extracted_files
+
