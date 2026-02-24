@@ -15,13 +15,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
         rust: [stable, beta]
         include:
           - os: ubuntu-latest
             rust: nightly
         exclude:
-          - os: macOS-latest
+          - os: macos-latest
             rust: beta
           - os: windows-latest
             rust: beta
@@ -138,8 +138,14 @@ jobs:
     - name: Build documentation
       run: cargo doc --no-deps --document-private-items
 
-    - name: Check for broken links in docs
-      run: cargo doc --no-deps --document-private-items 2>&1 | grep -q "warning:" && exit 1 || exit 0
+    - name: Check for documentation warnings
+      run: |
+        if cargo doc --no-deps --document-private-items 2>&1 | grep -q "warning:"; then
+          echo "Documentation warnings found!"
+          exit 1
+        else
+          echo "Documentation built successfully without warnings"
+        fi
 
   security:
     name: Security Audit
@@ -157,7 +163,7 @@ jobs:
   coverage:
     name: Code Coverage
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     steps:
     - name: Checkout sources
       uses: actions/checkout@v4
