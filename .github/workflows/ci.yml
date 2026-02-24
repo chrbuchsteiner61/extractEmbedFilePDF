@@ -206,15 +206,26 @@ jobs:
           ${{ runner.os }}-cargo-tools-
 
     - name: Install cargo-readme
-      run: cargo install cargo-readme
+      run: |
+        # Check if already installed and force reinstall to ensure latest version
+        cargo install cargo-readme --force
 
     - name: Check that README.md is up to date
       run: |
+        echo "Generating README with cargo-readme..."
         cargo readme > README_generated.md
+        echo "Comparing README files..."
         if ! cmp -s README.md README_generated.md; then
-          echo "README.md is not up to date. Please run 'cargo readme > README.md' and commit the changes."
+          echo "❌ README.md is not up to date."
+          echo "Please run 'cargo readme > README.md' and commit the changes."
+          echo ""
           echo "Differences found:"
           diff README.md README_generated.md || true
+          echo ""
+          echo "Generated content:"
+          echo "=================="
+          cat README_generated.md
           exit 1
+        else
+          echo "✅ README.md is up to date"
         fi
-        echo "README.md is up to date"
