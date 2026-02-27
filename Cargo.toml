@@ -1,0 +1,37 @@
+[package]
+name = "extractembedfilepdf"
+version = "0.2.0"
+edition = "2021"
+rust-version = "1.70"
+authors = ["Christian Buchsteiner <chrbuchsteiner61@github.com>"]
+description = "A Rust library for validating PDF/A-3 documents and extracting embedded files with support for various file formats including XML invoices"
+license = "MIT"
+repository = "https://github.com/chrbuchsteiner61/extractEmbedFilePDF"
+homepage = "https://github.com/chrbuchsteiner61/extractEmbedFilePDF"
+documentation = "https://docs.rs/extractembedfilepdf"
+readme = "README.md"
+keywords = ["pdf", "pdf-a-3", "embedded-files", "extraction", "xml"]
+categories = ["parsing", "filesystem", "data-structures"]
+include = [
+    "src/**/*",
+    "examples/*.rs",
+    "tests/**/*",
+    "Cargo.toml",
+    "README.md",
+    "LICENSE*",
+]
+
+[dependencies]
+lopdf = "0.39.0"
+thiserror = "2.0.18"
+
+[dev-dependencies]
+tempfile = "3.25.0"
+
+[[example]]
+name = "extract_files"
+path = "examples/extract_files.rs"
+
+[[example]]
+name = "filter_files"
+path = "examples/filter_files.rs"
