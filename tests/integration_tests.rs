@@ -43,8 +43,19 @@ fn make_file(filename: &str, data: &[u8]) -> EmbeddedFile {
 }
 
 #[test]
+fn extension_xml() {
+    assert_eq!(make_file("factur-x.xml", b"").extension(), Some("xml"));
+}
+
+#[test]
 fn extension_none_when_no_dot() {
     assert_eq!(make_file("readme", b"").extension(), None);
+}
+
+#[test]
+fn has_extension_case_insensitive() {
+    assert!(make_file("FACTUR-X.XML", b"").has_extension("xml"));
+    assert!(make_file("factur-x.xml", b"").has_extension("XML"));
 }
 
 #[test]
@@ -55,6 +66,31 @@ fn save_to_disk_creates_file() {
 
     let written = std::fs::read(dir.path().join("test.txt")).unwrap();
     assert_eq!(written, b"hello world");
+}
+
+// ── EmbeddedFileMetadata ──────────────────────────────────────────────────────
+
+#[test]
+fn metadata_is_xml_true_for_xml_mime() {
+    let m = EmbeddedFileMetadata {
+        mime_type: Some("application/xml".into()),
+        ..Default::default()
+    };
+    assert!(m.is_xml());
+}
+
+#[test]
+fn metadata_is_xml_false_without_mime() {
+    assert!(!EmbeddedFileMetadata::default().is_xml());
+}
+
+#[test]
+fn metadata_has_mime_type_case_insensitive() {
+    let m = EmbeddedFileMetadata {
+        mime_type: Some("Application/XML".into()),
+        ..Default::default()
+    };
+    assert!(m.has_mime_type("application/xml"));
 }
 
 // ── ExtractError display ──────────────────────────────────────────────────────
