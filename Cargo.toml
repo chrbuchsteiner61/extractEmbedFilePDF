@@ -26,7 +26,7 @@ lopdf = "0.39.0"
 thiserror = "2.0.18"
 
 [dev-dependencies]
-tempfile = "3.25.0"
+tempfile = "3.26.0"
 
 [[example]]
 name = "extract_files"
