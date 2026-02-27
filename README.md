@@ -3,6 +3,7 @@
 ## extractEmbedFilePDF
 
 A Rust library for validating PDF/A-3 documents and extracting their embedded files.
+Version 0.4
 
 ### What this crate does
 

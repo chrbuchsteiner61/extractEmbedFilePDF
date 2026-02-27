@@ -35,7 +35,13 @@
 use thiserror::Error;
 
 mod analyzer;
+mod analyzer_extraction;
+mod analyzer_validation;
 mod embedded;
+mod extraction_engine;
+mod file_discovery;
+mod file_parsing;
+mod pdf_utils;
 mod validator;
 
 pub use analyzer::PdfAnalyzer;
