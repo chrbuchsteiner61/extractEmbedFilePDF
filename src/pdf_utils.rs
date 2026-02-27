@@ -1,5 +1,4 @@
-/// Shared PDF parsing utilities used across multiple modules.
-use lopdf;
+//! Shared PDF parsing utilities used across multiple modules.
 
 /// Extract a string value from a PDF dictionary for a given key.
 ///

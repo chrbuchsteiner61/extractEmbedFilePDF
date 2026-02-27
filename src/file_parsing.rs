@@ -26,7 +26,7 @@ impl<'a> FileSpecParser<'a> {
         let obj = self.document.get_object(obj_id)?;
         obj.as_dict()
             .map_err(|_| self.extraction_error(name, context))
-            .map(|d| d.clone())
+            .cloned()
     }
 
     /// Parse a file-specification object and return an [`EmbeddedFile`] with content and metadata.
@@ -81,7 +81,7 @@ impl<'a> FileSpecParser<'a> {
             ef_val
                 .as_dict()
                 .map_err(|_| self.extraction_error(name, "/EF is not a dictionary"))
-                .map(|d| d.clone())
+                .cloned()
         }
     }
 
@@ -101,7 +101,7 @@ impl<'a> FileSpecParser<'a> {
         stream_obj
             .as_stream()
             .map_err(|_| self.extraction_error(name, "embedded stream object is not a stream"))
-            .map(|s| s.clone())
+            .cloned()
     }
 
     /// Return the best available filename: Unicode (/UF) > ASCII (/F) > fallback.
